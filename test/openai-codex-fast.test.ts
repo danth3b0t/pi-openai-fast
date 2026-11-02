@@ -609,6 +609,45 @@ test("loads through Pi's resource loader and registers a real fast provider", as
   assert.equal(session.extensionRunner.hasHandlers("session_tree"), false);
 });
 
+test("registers GPT-6.1 Terra when present in the built-in OpenAI catalog", async (t) => {
+  // Pi 0.99.1 predates Terra 6.1. Reuse a catalog entry to exercise discovery
+  // without upgrading the supported runtime or inventing production metadata.
+  const catalogModules: OpenAIModelsModule[] = [{ getBuiltinModels }];
+  const nestedPath = resolve(
+    rootDir,
+    "node_modules/@earendil-works/pi-coding-agent/node_modules/@earendil-works/pi-ai/dist/providers/all.js",
+  );
+  try {
+    const nested: unknown = await import(pathToFileURL(nestedPath).href);
+    assert.ok(isOpenAIModelsModule(nested));
+    catalogModules.push(nested);
+  } catch (error) {
+    if (!(error instanceof Error && "code" in error && error.code === "ERR_MODULE_NOT_FOUND")) {
+      throw error;
+    }
+  }
+  for (const catalog of catalogModules) {
+    const model = catalog
+      .getBuiltinModels(OPENAI_PROVIDER)
+      .find((entry) => entry.id === "gpt-5.6-terra");
+    assert.ok(model);
+    model.id = "gpt-6.1-terra";
+    t.after(() => {
+      model.id = "gpt-5.6-terra";
+    });
+  }
+  const terra = getBuiltinModels(OPENAI_PROVIDER).find((model) => model.id === "gpt-6.1-terra");
+  assert.ok(terra);
+
+  const { session } = await createIntegrationSession(t);
+  const fastTerra = session.modelRuntime.getModel(FAST_PROVIDER, "gpt-6.1-terra");
+  assert.ok(fastTerra);
+  assert.equal(fastTerra.api, FAST_API);
+  assert.deepEqual(fastTerra.cost, terra.cost);
+  assert.equal(fastTerra.contextWindow, terra.contextWindow);
+  assert.deepEqual(fastTerra.thinkingLevelMap, terra.thinkingLevelMap);
+});
+
 for (const modelId of BEHAVIOR_MODEL_IDS) {
   test(`${modelId} uses priority with canonical history and preserves the normal-tier control`, async (t) => {
     const server = await startOpenAIServer(t, [
