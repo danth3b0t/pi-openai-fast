@@ -23,6 +23,7 @@ const OPENAI_FAST_PROVIDER = "openai-fast";
 const OPENAI_PROVIDER = "openai";
 const PLACEHOLDER_API_KEY = "__openai_fast_reuses_openai_auth__";
 const OPENAI_FAST_MODEL_IDS = new Set([
+  "gpt-6.1-terra",
   "gpt-6.1-sol",
   "gpt-6-astra",
   "gpt-6-luna",

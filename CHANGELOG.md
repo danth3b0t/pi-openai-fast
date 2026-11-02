@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Expose `gpt-6.1-terra` through `openai-fast` when available in Pi's built-in OpenAI catalog.
+
 ### Changed
 
 - Replace the legacy fast provider with `openai-fast`, delegating priority requests and authentication to Pi's native `openai` Responses provider. No legacy compatibility alias is registered.
